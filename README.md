@@ -1,4 +1,4 @@
-# worker.templates.do - Templates
+# swr.do - Stale While Refresh Fetcher API
 
 ## Getting Started
 
