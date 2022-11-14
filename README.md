@@ -1,4 +1,4 @@
-# swr.do - Stale While Refresh Fetcher API
+# SWR.do - Stale While Refresh Fetcher API
 
 ## Getting Started
 
