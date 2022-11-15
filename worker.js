@@ -94,7 +94,7 @@ export default {
       engine = timespan.split(',')[1]
     }
 
-    if (['kv', 'cache'].includes(engine)) {
+    if (!['kv', 'cache'].includes(engine)) {
       return json({ api, data: { success: false, error: `Storage engine "${engine}" is not supported, please use either "kv" or "cache" (default)` }, user }, { status: 400 })
     }
 
