@@ -1,0 +1,52 @@
+{
+  "api": {
+    "icon": "彡",
+    "name": "database.do",
+    "description": "Durable Object Database",
+    "url": "https://database.do/api",
+    "type": "https://apis.do/database",
+    "endpoints": {
+      "resources": "https://namespace.database.do",
+      "list": "https://namespace.database.do/:resource",
+      "search": "https://namespace.database.do/:resource?prop=value",
+      "new": "https://namespace.database.do/:resource/new?prop=value",
+      "get": "https://namespace.database.do/:resource/:id",
+      "set": "https://namespace.database.do/:resource/:id/set?prop=value",
+      "import": "https://namespace.database.do/:resource/:id/import/:url",
+      "delete": "https://namespace.database.do/:resource/:id/delete"
+    },
+    "site": "https://database.do",
+    "login": "https://database.do/login",
+    "signup": "https://database.do/signup",
+    "repo": "https://github.com/drivly/database.do"
+  },
+  "resource": "Customer",
+  "id": "0",
+  "action": "get",
+  "links": {
+    "self": "https://database.do/Customer/0",
+    "set": "https://database.do/Customer/0/set?localTime=11/15/2022, 3:25:39 AM",
+    "delete": "https://database.do/Customer/0/delete"
+  },
+  "data": {},
+  "user": {
+    "authenticated": false,
+    "plan": "🛠 Build",
+    "isp": "Digital Ocean",
+    "flag": "🇺🇸",
+    "zipcode": "07014",
+    "city": "Clifton",
+    "metro": "New York",
+    "region": "New Jersey",
+    "country": "United States",
+    "continent": "North America",
+    "requestId": "76a698f5a89ef035-EWR",
+    "localTime": "11/15/2022, 3:25:39 AM",
+    "timezone": "America/New_York",
+    "edgeLocation": "Newark",
+    "edgeDistanceMiles": 10,
+    "latencyMilliseconds": 2,
+    "recentInteractions": 79,
+    "trustScore": 1
+  }
+}
