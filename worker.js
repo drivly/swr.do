@@ -1,18 +1,17 @@
 export const api = {
   icon: '🚀',
-  name: 'templates.do',
-  description: 'Cloudflare Worker Template',
-  url: 'https://templates.do/api',
+  name: 'swr.do',
+  description: 'Simple stale-while-revalidate cache built on Workers.',
+  url: 'https://swr.do/api',
   type: 'https://apis.do/templates',
   endpoints: {
-    listCategories: 'https://templates.do/api',
-    getCategory: 'https://templates.do/:type',
+    get: `https://swr.do/:ttl/:url+`,
   },
-  site: 'https://templates.do',
-  login: 'https://templates.do/login',
-  signup: 'https://templates.do/signup',
-  subscribe: 'https://templates.do/subscribe',
-  repo: 'https://github.com/drivly/templates.do',
+  site: 'https://swr.do',
+  login: 'https://swr.do/login',
+  signup: 'https://swr.do/signup',
+  subscribe: 'https://swr.do/subscribe',
+  repo: 'https://github.com/drivly/swr.do',
 }
 
 export const gettingStarted = [
@@ -21,7 +20,7 @@ export const gettingStarted = [
 ]
 
 export const examples = {
-  listItems: 'https://templates.do/worker',
+  get: 'https://swr.do/5m/database.do/Customer/0',
 }
 
 const parse_timespan = timespan => {
