@@ -9,7 +9,7 @@ services = [
 ]
  
 kv_namespaces = [
-  { binding = "STORAGE", id = "000" }
+  { binding = "STORAGE", id = "9e6af3c00d3540f5875ff0a112f2675c" }
 ]
 
 [miniflare]
