@@ -62,14 +62,26 @@ export default {
     const { user, hostname, pathname, rootPath, pathSegments, query } = await env.CTX.fetch(req).then(res => res.json())
     if (rootPath) return json({ api, gettingStarted, examples, user })
 
-    const [ timespan, ...url ] = pathSegments
+    let [ timespan, ...url ] = pathSegments
     let engine = hostname.split('.').slice(0, -2)[0] || 'cache'
+    engine = 'kv'
 
-    console.log(engine)
-
-    if (!url.length) {
-      return json({ api, data: { success: false, error: 'You must include a timespan for us to store your response. Please use either seconds or abriviated formats (60, or, 1m)' }, user }, { status: 400 })
+    // if timestamp doesnt match our format, assume its a url
+    console.log(
+      timespan.match(/^[0-9]+[yMwdhms]?(-[0-9]+[yMwdhms]?)?(,[a-z]+)?$/)
+    )
+    if (!timespan.match(/^[0-9]+[yMwdhms]?(-[0-9]+[yMwdhms]?)?(,[a-z]+)?$/)) {
+      url = [timespan, ...url]
+      timespan = {
+        kv: 'no-limit',
+        cache: '1d',
+      }[engine]
     }
+
+    console.log(
+      timespan,
+      engine
+    )
 
     const kvCacheEngine = {
       async put(key, resp) {
@@ -117,6 +129,10 @@ export default {
         return new Response(body, {
           headers: new Headers(JSON.parse(headers)),
         })
+      },
+      async delete(key) {
+        await env.STORAGE.delete(`${key}-headers`)
+        await env.STORAGE.delete(`${key}-body`)
       }
     }
 
@@ -135,23 +151,27 @@ export default {
     let expire_ms
     let stale_ms = 600_000 // 10 minutes
 
-    try {
-      if (timespan.includes('-')) {
-        // We have both a expiry and a stale time
-        const [ expire, stale ] = timespan.split(',')[0].split('-')
-        expire_ms = parse_timespan(expire)
-        stale_ms = parse_timespan(stale)
-      } else {
-        expire_ms = parse_timespan(timespan.split(',')[0])
+    if (timespan === 'no-limit') {
+      expire_ms = 0
+      stale_ms = stale_ms * 1000
+    } else {
+      try {
+        if (timespan.includes('-')) {
+          // We have both a expiry and a stale time
+          const [ expire, stale ] = timespan.split(',')[0].split('-')
+          expire_ms = parse_timespan(expire)
+          stale_ms = parse_timespan(stale)
+        } else {
+          expire_ms = parse_timespan(timespan.split(',')[0])
+        }
+      } catch (e) {
+        return json({ api, data: { success: false, error: 'Invalid timespan. Please use either seconds or abriviated formats (60, or, 1m)' }, user }, { status: 400 })
       }
-    } catch (e) {
-      return json({ api, data: { success: false, error: 'Invalid timespan. Please use either seconds or abriviated formats (60, or, 1m)' }, user }, { status: 400 })
-    }
-
-
-    if (timespan.includes(',')) {
-      // We have a custom engine
-      engine = timespan.split(',')[1]
+  
+      if (timespan.includes(',')) {
+        // We have a custom engine
+        engine = timespan.split(',')[1]
+      }
     }
 
     if (!['kv', 'cache'].includes(engine)) {
@@ -173,13 +193,15 @@ export default {
         
         const r = new Response(res.body, res)
 
-        r.headers.set('X-CACHE-DT', new Date().toISOString())
-        r.headers.set('X-CACHE-TTL', expire_ms)
-        r.headers.set(
-          'Cache-Control',
-          `public, max-age=${parseInt(expire_ms / 1000) + parseInt(stale_ms / 1000)}`
-        )
-        
+        if (timespan != 'no-limit') {
+          r.headers.set('X-CACHE-DT', new Date().toISOString())
+          r.headers.set('X-CACHE-TTL', expire_ms)
+          r.headers.set(
+            'Cache-Control',
+            `public, max-age=${parseInt(expire_ms / 1000) + parseInt(stale_ms / 1000)}`
+          )
+        }      
+
         // Set-Cookie headers are not allowed in the cache
         r.headers.delete('Set-Cookie')
 
@@ -193,6 +215,14 @@ export default {
       r.headers.set('X-CACHE-EXPIRES', new Date(new Date().getTime() + expire_ms).toISOString())
       r.headers.set('X-READ-MS', new Date() - fetch_start)
 
+      return r
+    }
+    
+    if (timespan === 'no-limit') {
+      const r = new Response(cache_resp.body, cache_resp)
+      r.headers.set('X-CACHE', 'HIT')
+      r.headers.set('X-CACHE-EXPIRES', 'No Limit')
+      r.headers.set('X-READ-MS', new Date() - cache_start)
       return r
     }
 
