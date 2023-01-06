@@ -7,10 +7,15 @@ compatibility_date = "2022-09-23"
 services = [
   { binding = "CTX", service = "ctx-do", environment = "production" }
 ]
+ 
+kv_namespaces = [
+  { binding = "STORAGE", id = "000" }
+]
 
 [miniflare]
 cache = true
 cache_persist = "./data/"
+kv_persist = "./data/"
 
 [build.upload]
 format = "modules"

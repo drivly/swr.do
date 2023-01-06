@@ -49,6 +49,11 @@ const parse_timespan = timespan => {
     ms += amount * units[unit]
   }
 
+  console.log(
+    timespan,
+    ms
+  )
+
   return ms
 }
 
@@ -56,15 +61,68 @@ export default {
   fetch: async (req, env, ctx) => {
     const { user, hostname, pathname, rootPath, pathSegments, query } = await env.CTX.fetch(req).then(res => res.json())
     if (rootPath) return json({ api, gettingStarted, examples, user })
-    
+
     const [ timespan, ...url ] = pathSegments
-    let engine = 'cache'
+    let engine = hostname.split('.')[0] || 'cache'
 
     if (!url.length) {
       return json({ api, data: { success: false, error: 'You must include a timespan for us to store your response. Please use either seconds or abriviated formats (60, or, 1m)' }, user }, { status: 400 })
     }
 
-    const cache = caches.default
+    const kvCacheEngine = {
+      async put(key, resp) {
+        // We need to split the resp into two keys, one for the headers, and one for the body.
+        // This is because the KV API only allows strings to be stored, and we need to store the headers as an object
+
+        const headers = Object.fromEntries(resp.headers.entries())
+        const body = await resp.arrayBuffer()
+
+        // Read the cache control header, and if its set to no-store, dont cache it
+        if (headers['cache-control'] && headers['cache-control'].includes('no-store')) {
+          return false
+        }
+
+        console.log(
+          headers['cache-control']
+        )
+
+        const ttl = headers['cache-control'] && headers['cache-control'].includes('max-age') ? headers['cache-control'].split('max-age=')[1].split(',')[0] : 0
+
+        await env.STORAGE.put(
+          `${key}-headers`,
+          JSON.stringify(headers),
+          {
+            expirationTtl: ttl ? parseInt(ttl) : undefined,
+          }
+        )
+
+        await env.STORAGE.put(
+          `${key}-body`,
+          body,
+          {
+            expirationTtl: ttl ? parseInt(ttl) : undefined,
+          }
+        )
+
+        return true
+      },
+      async match(key) {
+        const headers = await env.STORAGE.get(`${key}-headers`)
+        const body = await env.STORAGE.get(`${key}-body`)
+
+        if (!headers || !body) return false
+
+        return new Response(body, {
+          headers: new Headers(JSON.parse(headers)),
+        })
+      }
+    }
+
+    const cache = {
+      kv: kvCacheEngine,
+      cache: caches.default,
+    }[engine]
+
     const cache_key = `https://${url.join('/')}?ttl=${timespan}`
 
     if (timespan === 'purge') {
@@ -112,6 +170,7 @@ export default {
         const res = fetch_resp.clone()
         
         const r = new Response(res.body, res)
+
         r.headers.set('X-CACHE-DT', new Date().toISOString())
         r.headers.set('X-CACHE-TTL', expire_ms)
         r.headers.set(
