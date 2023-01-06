@@ -63,7 +63,9 @@ export default {
     if (rootPath) return json({ api, gettingStarted, examples, user })
 
     const [ timespan, ...url ] = pathSegments
-    let engine = hostname.split('.')[0] || 'cache'
+    let engine = hostname.split('.').slice(0, -2)[0] || 'cache'
+
+    console.log(engine)
 
     if (!url.length) {
       return json({ api, data: { success: false, error: 'You must include a timespan for us to store your response. Please use either seconds or abriviated formats (60, or, 1m)' }, user }, { status: 400 })
